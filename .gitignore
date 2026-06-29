@@ -1,0 +1,60 @@
+# ──────────────────────────────────────────────
+# Android / Gradle build artifacts
+# ──────────────────────────────────────────────
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+*.class
+
+bin/
+gen/
+out/
+build/
+release/
+
+.gradle/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ──────────────────────────────────────────────
+# Local config (machine-specific, never commit)
+# ──────────────────────────────────────────────
+local.properties
+google-services.json
+*.jks
+*.keystore
+
+# ──────────────────────────────────────────────
+# Android Studio / IntelliJ IDEA
+# ──────────────────────────────────────────────
+*.iml
+
+# Keep shared IDE config, ignore local/noisy files
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetSelector.xml
+.idea/compiler.xml
+.idea/androidTestResultsUserPreferences.xml
+
+# ──────────────────────────────────────────────
+# Logs & profiling
+# ──────────────────────────────────────────────
+*.log
+*.orig
+*.hprof
+hs_err_pid*
+
+# ──────────────────────────────────────────────
+# OS files
+# ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*~
+.fuse_*
