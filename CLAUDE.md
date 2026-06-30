@@ -27,13 +27,13 @@ Contexto del proyecto para Claude Code. Léelo completo antes de tocar código.
 | UI | Jetpack Compose (Material 3) |
 | Persistencia | Room (datos) + DataStore Preferences (ajustes) |
 | Arquitectura | MVVM ligero: `ViewModel` + `StateFlow` + `Repository` + Room DAO |
-| Detección de app activa | `AccessibilityService` (+ tick periódico) |
-| Overlay de bloqueo | `SYSTEM_ALERT_WINDOW` |
-| Persistencia en background | Foreground Service + `BOOT_COMPLETED` receiver |
-| Bordes de ventana | `AlarmManager` para reevaluar al inicio/fin de cada franja |
+| Detección de app activa | `AccessibilityService` (núcleo; el sistema lo mantiene vivo) + tick periódico vía `UsageStatsManager` |
+| Overlay de bloqueo | `SYSTEM_ALERT_WINDOW` (fase 4) |
+| Bordes de franja | `AlarmManager` (`setExactAndAllowWhileIdle`) dispara en inicio/fin de cada ventana activa |
+| Arranque | `BootReceiver` re-arma las alarmas de `AlarmManager` tras reiniciar |
 | Anti-desinstalación (opcional) | `DevicePolicyManager` (Device Admin) |
 
-- **compileSdk / targetSdk:** API 36 (último estable). **minSdk:** 29. Es su dispositivo, se puede subir si conviene.
+- **compileSdk / targetSdk:** API 37. **minSdk:** 29.
 - **DI:** manual / service-locator para v1. No metas Hilt salvo que el proyecto lo justifique.
 - **Idioma de la UI:** **español**. Comentarios y nombres de código en inglés (convención estándar).
 
@@ -54,10 +54,12 @@ com.lockdapp            (applicationId provisional — confirmar con Daniel)
 │   └── engine/         BlockEngine (lógica pura isBlocked)
 ├── service/
 │   ├── BlockAccessibilityService.kt
-│   ├── LockForegroundService.kt
-│   └── BootReceiver.kt
+│   ├── AlarmScheduler.kt       (programa alarmas exactas en los bordes de cada franja)
+│   ├── AlarmReceiver.kt        (BroadcastReceiver — reevalúa al cruzar el borde)
+│   └── BootReceiver.kt         (BOOT_COMPLETED — re-arma las alarmas tras reiniciar)
 ├── ui/
 │   ├── theme/          Theme.kt, Color.kt (los 3 ColorScheme), Type.kt
+│   ├── onboarding/     pantalla de permisos iniciales
 │   ├── dashboard/
 │   ├── schedules/      lista + editor
 │   ├── apps/           lista de apps + grupos
@@ -147,11 +149,12 @@ fun isBlocked(pkg: String, now: LocalDateTime): Boolean {
 
 ## Comportamiento del runtime — gotchas críticos
 
-- **Detección de app en primer plano:** `BlockAccessibilityService.onAccessibilityEvent` con `TYPE_WINDOW_STATE_CHANGED` da el package activo → consulta `BlockEngine.isBlocked()` → si true, lanza la pantalla de bloqueo (overlay) o un intent a Home.
-- **Caso que se escapa:** si el usuario YA está dentro de una app cuando arranca la ventana de bloqueo, no hay evento de cambio de foreground. Por eso el **Foreground Service hace un tick periódico (~30–60s)** que reevalúa la app actual, y se usa `AlarmManager` en los bordes exactos de cada franja.
-- **`foregroundServiceType`** debe declararse en el manifest (Android 14+). Usar el tipo apropiado (p. ej. `specialUse` con justificación).
-- **`BOOT_COMPLETED`**: el `BootReceiver` reactiva el Foreground Service al reiniciar.
-- **Permisos** (todos se conceden manualmente en Ajustes del sistema, con onboarding que los explica uno a uno): Accesibilidad, Usage Access (`PACKAGE_USAGE_STATS`), Overlay (`SYSTEM_ALERT_WINDOW`), excepción de batería, y opcionalmente Device Admin.
+- **Detección de app en primer plano:** `BlockAccessibilityService.onAccessibilityEvent` con `TYPE_WINDOW_STATE_CHANGED` da el package activo → consulta `BlockEngine.isBlocked()` → si true, lanza un Intent a Home (fase 3) o la pantalla de bloqueo overlay (fase 4).
+- **El sistema mantiene vivo el AccessibilityService** mientras el usuario lo tenga habilitado en Accesibilidad. No se necesita un ForegroundService separado en v1.
+- **Caso que se escapa:** si el usuario YA está dentro de una app cuando arranca la ventana de bloqueo, no hay evento de cambio de ventana. Por eso el servicio tiene un **tick periódico (~12 s)** vía `UsageStatsManager` que reevalúa la app actual, y `AlarmManager` dispara exactamente en los bordes de cada franja.
+- **`BOOT_COMPLETED`**: el `BootReceiver` re-arma las alarmas de `AlarmManager` tras reiniciar. El `AccessibilityService` se reactiva solo si el usuario lo tenía habilitado en Accesibilidad.
+- **Exact alarms:** se usa `USE_EXACT_ALARM` (API 33+, pre-granted). `AlarmScheduler` verifica `canScheduleExactAlarms()` y usa `setAndAllowWhileIdle` como fallback.
+- **Permisos** (todos se conceden manualmente en Ajustes del sistema, con onboarding que los explica uno a uno): Accesibilidad, Usage Access (`PACKAGE_USAGE_STATS`), Overlay (`SYSTEM_ALERT_WINDOW`), excepción de batería.
 - **Listar apps:** `getInstalledApplications` filtrado por `CATEGORY_LAUNCHER` para quitar paquetes de sistema. Iconos en **carga perezosa** (no cargar 80 de golpe).
 
 ---

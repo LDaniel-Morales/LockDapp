@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LockDapp" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Base theme for the whole app. Content is 100% Compose, so this only
+         needs to supply a window background and suppress the ActionBar. -->
+    <style name="Theme.LockDapp" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <!-- Theme for BlockActivity: transparent bars so enableEdgeToEdge() fills edge-to-edge. -->
+    <style name="Theme.Lockd.Block" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
 </resources>
