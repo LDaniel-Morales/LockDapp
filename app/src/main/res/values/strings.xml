@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mástil</string>
+    <string name="accessibility_service_label">Servicio de bloqueo de Mástil</string>
+    <string name="accessibility_service_description">Detecta qué aplicación está en primer plano para aplicar los bloqueos que tú mismo configuraste.</string>
 </resources>
